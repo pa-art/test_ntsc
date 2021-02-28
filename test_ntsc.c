@@ -168,10 +168,11 @@ void vsync ( void ) {
         //display_message_at_random_place("Hello!");
     }
     //sleep_us(25);
-    sleep_us(10);
+    sleep_us(25);
     BLACK;
     sleep_us(5);
     SYNC;
+    //sleep_us(25);
     sleep_us(25);
     BLACK;
     sleep_us(5);
@@ -199,9 +200,9 @@ int main() {
     adc_select_input(ADC_TEMP);    // ADC selected
     // clear VRAM
     vram_clear();
-/*  
+/*
     int cnt = 0;
-    for (int y = 0; y < VRAM_H; y += 2) {
+    for (int y = 0; y < VRAM_H; y ++) {
         for (int x = 0; x < VRAM_W; x++) {
             vram_write(x, y, cnt++);
             if (cnt > ASCII_CHAR_NUM) {
@@ -209,19 +210,20 @@ int main() {
             }
         }
     }
-*/   
+*/
 /*
     for (int i = 0; i < 5; i++) {
         vram_strings(i, 5+2*i, "Hello, world!");
     }
 */
+
     // write message to VRAM
-    vram_strings(0, 3, "Hello, world!");
-    vram_strings(0, 5, "This is a demo");
-    vram_strings(0, 6, "of NTSC signal");
-    vram_strings(0, 7, "generation.");
-    vram_strings(0, 9, "0123456789");
-    vram_strings(0, 10, "@[]+-<>!/%$#()\\");
+    vram_strings(0, 1, "Hello, world!");
+    vram_strings(0, 4, "This is a demo");
+    vram_strings(0, 5, "of NTSC signal");
+    vram_strings(0, 6, "generation.");
+    vram_strings(0, 9, "0123456789+-/*");
+    vram_strings(0, 10, "@[]<>!%$#&()\\");
 
     while (1) {
         // vertical synchronization duration
@@ -247,15 +249,16 @@ int main() {
                 // draw bit from character table (ascii_table)
                 for (int w = 0; w < CHAR_W; w++) {
                     if ((ascii_table[c][count % CHAR_H] & (1 << w)) != 0) {
-                        WHITE;
+                        GRAY; WHITE;
                     } else {
-                        BLACK;
+                        BLACK; BLACK;
                     }
                 }
             }
             // right blank??
             BLACK;
-            sleep_us(6);    // should be tuned
+//            sleep_us(6);    // should be tuned
+            sleep_us(3);    // should be tuned
         } else {
             hsync();
             BLACK;
