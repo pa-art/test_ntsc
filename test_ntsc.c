@@ -79,10 +79,10 @@ void vram_strings( int x, int y, char *mes) {
     return;
 }
 
-// display bar at the line
-void display_bar( int line ) {
+// display bar at the line with given character
+void display_bar( int line, char c ) {
     if (bar_inc == true) {
-        vram_write(bar_len, line, '*');
+        vram_write(bar_len, line, c);
         bar_len++;
         if (bar_len == BAR_MAX) {
             bar_inc = false;
@@ -153,7 +153,7 @@ void vsync ( void ) {
     SYNC;
     if (count_vsync % 10 == 0) {
         // display bar
-        display_bar(16);
+        display_bar(16, '#');
     }
     if (count_vsync % 1000 == 0) {
         // measure temprature and display it
