@@ -7,9 +7,13 @@
 #include <string.h>
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
+#include "hardware/adc.h"
 //#include "ascii_chars.h"
 #include "font8x8_basic.h"
 
+#define CONV_FACTOR (3.3f / (1 << 12)) // ADC data -> voltage (white Pico)
+//#define CONV_FACTOR (3.25f / (1 << 12)) // ADC data -> voltage (red Pico)
+#define ADC_TEMP    4 // temperature sensor input
 #define LED     25      // GPIO connected LED on the board
 #define MLED    (1 << LED)
 #define LEDON   gpio_put_masked(MLED, MLED)
@@ -29,11 +33,10 @@
 unsigned char vram[VRAM_W][VRAM_H]; // VRAM
 int count = 1;                      // horizontal line counter
 int count_vsync = 0;
-int bx = 0;
-int by = 0;
-int bbx, bby;
+int bx = 0; int by = 0;
+int bbx = 0; int bby = 0;
+int buf_len = 1;
 bool state = true;
-char buf[VRAM_W];
 int bar_len = 0;
 bool bar_inc = true;
 #define BAR_MAX 16
@@ -63,7 +66,6 @@ void vram_strings( int x, int y, char *mes) {
     if ((x < 0) || (x > VRAM_W) || (y < 0) || (y > VRAM_H)) {
         return;
     }
-
     int l = strlen(mes);
     for (int i = 0; i < l; i++) {
         // if x position overflows, return
@@ -75,6 +77,65 @@ void vram_strings( int x, int y, char *mes) {
         }
     }
     return;
+}
+
+// display bar at the line
+void display_bar( int line ) {
+    if (bar_inc == true) {
+        vram_write(bar_len, line, '*');
+        bar_len++;
+        if (bar_len == BAR_MAX) {
+            bar_inc = false;
+        }
+    } else {
+        vram_write(bar_len, line, ' ');
+        bar_len--;
+        if (bar_len == 0) {
+            bar_inc = true;
+        }
+    }
+}
+
+// flip LED
+void flip_led( void ) {
+    if (state == true) {
+        LEDON;
+    } else {
+        LEDOFF;
+    }
+    state = !state;
+}
+
+// measure Temperature and display
+void measure_temp( int line ) {
+    uint16_t temp_dat;
+    float voltage, temp;
+    char mes[VRAM_W];
+    // read ADC(temperature) data
+    temp_dat = adc_read();
+    // convert ADC data to voltage
+    voltage = temp_dat * CONV_FACTOR;
+    // convert voltage to temperature
+    temp = 27 - (voltage - 0.706) / 0.001721;
+    // make massage from voltage and temp
+    sprintf(mes, "V=%2.3f T=%2.1f", voltage, temp);
+    // display voltage and temp
+    vram_strings(0, line, mes);
+}
+
+// sisplay given message at random place
+void display_message_at_random_place( char *buf ) {
+    // display message
+    for (int i = 0; i < buf_len; i++) {
+        vram_strings(bbx + i, bby, " ");
+    }
+    // next position
+    bx = rand() % VRAM_W;
+    by = rand() % VRAM_H;
+    bbx = bx; bby = by;
+    // display message
+    vram_strings(bx, by, buf);
+    buf_len = strlen(buf);
 }
 
 // to generate horizontal sync siganl
@@ -90,41 +151,24 @@ void hsync( void ) {
 // to generate vertical sync siganl
 void vsync ( void ) {
     SYNC;
-/*
-    sprintf(buf, "(%2d,%2d)", bx, by);
-    vram_strings(bx, by, buf);
-    if (count_vsync % 200 == 0) {
-        vram_strings(bbx, bby, "       ");
-        bx = rand() % VRAM_W;
-        by = rand() % VRAM_H;
-        bbx = bx; bby = by;
+    if (count_vsync % 10 == 0) {
+        // display bar
+        display_bar(16);
     }
-*/
-    if (count_vsync % 50 == 0) {
-        if (bar_inc == true) {
-            vram_write(bar_len, 13, '@');
-            bar_len++;
-            if (bar_len == BAR_MAX) {
-                bar_inc = false;
-            }
-        } else {
-            vram_write(bar_len, 13, ' ');
-            bar_len--;
-            if (bar_len == 0) {
-                bar_inc = true;
-            }
-        }
-    }
-    if (state == true) {
-        LEDON;
-    } else {
-        LEDOFF;
+    if (count_vsync % 1000 == 0) {
+        // measure temprature and display it
+        measure_temp(13);
     }
     if (count_vsync % 200 == 0) {
-        state = !state;
+        // flip LED
+        flip_led();
+    }
+    if (count_vsync % 500 == 0) {
+        // display Hello! at random place
+        //display_message_at_random_place("Hello!");
     }
     //sleep_us(25);
-    sleep_us(25);
+    sleep_us(10);
     BLACK;
     sleep_us(5);
     SYNC;
@@ -147,6 +191,12 @@ int main() {
     gpio_set_dir(LED, GPIO_OUT);
     // init stdio
     stdio_init_all();
+    // init ADC
+    adc_init();
+    // enable temperature sensor
+    adc_set_temp_sensor_enabled(true);
+    // select ADC input
+    adc_select_input(ADC_TEMP);    // ADC selected
     // clear VRAM
     vram_clear();
 /*  
@@ -186,6 +236,7 @@ int main() {
         } else if (count >= V_BASE && count < V_BASE + VRAM_H * CHAR_H) {
             hsync();
             // left blank??
+            BLACK;
             sleep_us(1);    // should be tuned
             // calculate VRAM y position from scan line number
             int y = (count - V_BASE) / CHAR_H;
