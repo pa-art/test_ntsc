@@ -256,7 +256,7 @@ int main() {
     // counter is allowed to wrap over its maximum range (0 to 2**16-1)
     pwm_config config = pwm_get_default_config();
     // Set counter wrap value to generate PWM interrupt by this value
-    pwm_set_wrap(slice_num, 7997);
+    pwm_set_wrap(slice_num, 7999);
     // Load the configuration into our PWM slice, and set it running.
     pwm_set_enabled(slice_num, true);
 
