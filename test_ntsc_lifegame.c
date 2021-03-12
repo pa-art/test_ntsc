@@ -25,22 +25,23 @@
 #define GP15    15      // GPIO15 connected to RCA+ pin via 1k ohm
 #define M14     (1 << GP14) // bit mask for GPIO14
 #define M15     (1 << GP15) // bit mask for GPIO15
-#define SYNC    gpio_put_masked((M14 | M15), 0)             // GPIO14='L' and GPIO15='L'
-#define WHITE   gpio_put_masked((M14 | M15), (M14 | M15))   // GPIO14='H' and GPIO15='H'
-#define BLACK   gpio_put_masked((M14 | M15), M15)           // GPIO14='L' and GPIO15='H'
-#define GRAY    gpio_put_masked((M14 | M15), M14)           // GPIO14='H' and GPIO15='L'
+#define SYNC    gpio_put_masked(M14 | M15, 0)             // GPIO14='L' and GPIO15='L'
+#define WHITE   gpio_put_masked(M14 | M15, M14 | M15)     // GPIO14='H' and GPIO15='H'
+#define BLACK   gpio_put_masked(M14 | M15, M15)           // GPIO14='L' and GPIO15='H'
+#define GRAY    gpio_put_masked(M14 | M15, M14)           // GPIO14='H' and GPIO15='L'
 #define VRAM_W  30      // width size of VRAM
 #define VRAM_H  28      // height size of VRAM
 #define V_BASE  24      // horizontal line number to start displaying VRAM
 #define BAR_MAX (VRAM_W-1)      // bar length
 
-#define LIFE_SIZE   28  // size of life field
+#define LIFE_SIZE   25  // size of life field
 #define LIVE    1       // live state of life
 #define DEAD    0       // dead state of life
-#define DRAW_SX 1       // draw start of x
-#define DRAW_SY 0       // draw start of y
+#define DRAW_SX 2       // draw start of x
+#define DRAW_SY 3       // draw start of y
 #define BBOX    4       // character for living life
 #define WBOX    5       // character for dead life
+#define STABLE  30      // stages for judging stable state
 
 volatile unsigned char vram[VRAM_W][VRAM_H]; // VRAM
 volatile int count = 1;                      // horizontal line counter
@@ -131,16 +132,24 @@ void init_random( ) {
 void gen_life( ) {
     for (int i = 0; i < LIFE_SIZE; i++) {
         for (int j = 0; j < LIFE_SIZE; j++) {
-            life[i][j] = ((rand() % 30) <= 5) ? LIVE : 0;
+            life[i][j] = ((rand() % 100) <= 20) ? LIVE : 0;
         }
     }
 }
 
 // update life map
 void update_life( ) {
+    int tmp_life[LIFE_SIZE][LIFE_SIZE];
+
     for (int i = 0; i < LIFE_SIZE; i++) {
         for (int j = 0; j < LIFE_SIZE; j++) {
-            life[i][j] = dead_or_alive(i, j);
+            tmp_life[i][j] = dead_or_alive(i, j);
+        }
+    }
+
+    for (int i = 0; i < LIFE_SIZE; i++) {
+        for (int j = 0; j < LIFE_SIZE; j++) {
+            life[i][j] = tmp_life[i][j];
         }
     }
 }
@@ -191,6 +200,17 @@ int dead_or_alive(int x, int y) {
         }
     }
     return DEAD;
+}
+
+// count number of lives
+int count_life( ) {
+    int lives = 0;
+    for (int i = 0; i < LIFE_SIZE; i++) {
+        for (int j = 0; j < LIFE_SIZE; j++) {
+            lives += (life[i][j] == LIVE) ? 1 : 0;
+        }
+    }
+    return lives;
 }
 
 // draw life map
@@ -325,7 +345,11 @@ int main() {
     // generate initial life map
     gen_life();
 
-    volatile int countup;
+    int countup = 0;
+    int stages = 0;
+    int num_live, num_live_p;
+    int stable_count = 0;
+    char mes[VRAM_W];
 
     while (1) {
         if (countup % 200000 == 0) {
@@ -333,8 +357,36 @@ int main() {
             flip_led();
         }
         if (countup % 100000 == 0) {
+            // draw life map
             draw_life();
+            // update life map
             update_life();
+            // count lives
+            num_live = count_life();
+            // display messages
+            vram_strings(0, 1, "                  ");
+            vram_strings(0, 2, "                  ");
+            sprintf(mes, "Stage = %d", stages++);
+            vram_strings(5, 1, mes);
+            sprintf(mes, "Lives = %d", count_life());
+            vram_strings(5, 2, mes);
+            // if number of lives is equal to the previous number
+            if (num_live == num_live_p) {
+                // count up stable state
+                stable_count++;
+                // if stable state continues STABLE times
+                if (stable_count > STABLE) {
+                    // reset life map
+                    gen_life();
+                    stages = 0;
+                    stable_count = 0;
+                }
+            } else {
+                // reset stable count
+                stable_count = 0;
+            }
+            // memory previous number of lives
+            num_live_p = num_live;
         }
 
         countup++;
