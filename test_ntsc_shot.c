@@ -1,6 +1,6 @@
 /**
  * Test program for NTSC signal generation.
- * Life game is demonstrated.
+ * "FLYING METEO!!" game is implemented.
  * ATTENTION: You should compile this source with Release option of ARM compiler.
  * Feb.27--, 2021  Pa@ART
  */
@@ -12,10 +12,7 @@
 #include "hardware/pwm.h"
 #include "hardware/adc.h"
 #include "font8x8_basic.h"
-//#include "font7x5_basic.h"
 
-#define CONV_FACTOR (3.3f / (1 << 12)) // ADC data -> voltage (white Pico)
-#define ADC_TEMP    4 // temperature sensor input
 #define LED     25      // GPIO connected LED on the board
 #define MLED    (1 << LED)
 #define LEDON   gpio_put_masked(MLED, MLED)
@@ -119,23 +116,6 @@ void flip_led( void ) {
         LEDOFF;
     }
     state = !state;
-}
-
-// measure Temperature and display
-void measure_temp( int line ) {
-    uint16_t temp_dat;
-    float voltage, temp;
-    char mes[VRAM_W];
-    // read ADC(temperature) data
-    temp_dat = adc_read();
-    // convert ADC data to voltage
-    voltage = temp_dat * CONV_FACTOR;
-    // convert voltage to temperature
-    temp = 27 - (voltage - 0.706) / 0.001721;
-    // make massage from voltage and temp
-    sprintf(mes, "V=%2.3f T=%2.1f", voltage, temp);
-    // display voltage and temp
-    vram_strings(0, line, mes);
 }
 
 // initialize video and LED GPIO
@@ -414,8 +394,6 @@ int main() {
     adc_init();
     // enable temperature sensor
     adc_set_temp_sensor_enabled(true);
-    // select ADC input
-    adc_select_input(ADC_TEMP);    // ADC selected
     // clear VRAM
     vram_clear();
     // initialize random seed
