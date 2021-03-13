@@ -1,6 +1,6 @@
 /**
  * Test program for NTSC signal generation.
- * "FLYING METEO!!" game is implemented.
+ * "FLYING METEOR!!" game is implemented.
  * ATTENTION: You should compile this source with Release option of ARM compiler.
  * Feb.27--, 2021  Pa@ART
  */
@@ -42,13 +42,13 @@
 #define DKEY    (1 << DKEYGP)
 #define AKEY    (1 << AKEYGP)
 #define BKEY    (1 << BKEYGP)
-#define CMETEO  0xA     // character of wall
+#define CMETEOR  0xA     // character of wall
 #define CHEART  0x8     // character of dot
 #define CME     0x9     // character of me
-#define NMETEO  20      // max number of meteo
-#define IMRATE  30000   // initial meteo rate
-#define MMRATE  1000    // minimum meteo rate
-#define IPMETEO 20      // initial meteo probability
+#define NMETEOR  20      // max number of METEOR
+#define IMRATE  30000   // initial METEOR rate
+#define MMRATE  1000    // minimum METEOR rate
+#define IPMETEOR 20      // initial METEOR probability
 #define NHEART  3       // max number of heart
 #define HTRATE  30000   // heart rate
 #define MYRATE  10000   // my rate
@@ -171,12 +171,12 @@ uint32_t key_scan( ) {
     return result;
 }
 
-// initialize meteo array
-void init_meteo( entity *e ) {
-    for (int i = 0; i < NMETEO; i++) {
+// initialize METEOR array
+void init_METEOR( entity *e ) {
+    for (int i = 0; i < NMETEOR; i++) {
         e[i].x = -1;
         e[i].y = -1;
-        e[i].c = CMETEO;
+        e[i].c = CMETEOR;
         e[i].hp = 1;
         e[i].sp = 0;
     }
@@ -271,8 +271,8 @@ bool move_me( entity *e ) {
     return true;
 }
 
-// judge if I've got a heart or bumped into meteo
-int judge_me( entity *me, entity *meteo, entity *heart) {
+// judge if I've got a heart or bumped into METEOR
+int judge_me( entity *me, entity *METEOR, entity *heart) {
     int i;
     int bonus = 0;
     // heart 
@@ -286,15 +286,15 @@ int judge_me( entity *me, entity *meteo, entity *heart) {
             heart[i].x = -1;
         }
     }
-    // meteo
-    for (i = 0; i < NMETEO; i++) {
-        // if I've bumped into meteo
-        if ((me->x == meteo[i].x) && (me->y == meteo[i].y)) {
+    // METEOR
+    for (i = 0; i < NMETEOR; i++) {
+        // if I've bumped into METEOR
+        if ((me->x == METEOR[i].x) && (me->y == METEOR[i].y)) {
             // power down my HP
             me->hp--;
-            // clear the meteo
-            vram_write(meteo[i].x, meteo[i].y, ' ');
-            meteo[i].x = -1;
+            // clear the METEOR
+            vram_write(METEOR[i].x, METEOR[i].y, ' ');
+            METEOR[i].x = -1;
         }
     }
     // return bonus score to be added
@@ -423,13 +423,13 @@ int main() {
     int countup = 0;
     int score = 0;
     int hi_score = 0;
-    int meteo_rate = IMRATE;
-    int p_metro = IPMETEO;
+    int METEOR_rate = IMRATE;
+    int p_metro = IPMETEOR;
     uint32_t keys;
     bool blink = true;
     bool initial;
     char mes[VRAM_W];
-    entity me, meteo[NMETEO], heart[NHEART];
+    entity me, METEOR[NMETEOR], heart[NHEART];
     enum State {IDLE, PLAY, OVER} game_state;
 
     // initialize game state
@@ -445,8 +445,8 @@ int main() {
         if (game_state == PLAY) {
             // if needs initializing
             if (initial == true) {
-                // initialize meteo
-                init_meteo(meteo);
+                // initialize METEOR
+                init_METEOR(METEOR);
                 // initialize heart
                 init_heart(heart);
                 // initialize me
@@ -465,7 +465,7 @@ int main() {
                 // count up score
                 score++;
                 // judge me
-                score += judge_me(&me, meteo, heart);
+                score += judge_me(&me, METEOR, heart);
                 // if HP is 0
                 if (me.hp <= 0) {
                     // game state is game over
@@ -475,18 +475,18 @@ int main() {
                 sprintf(mes, "SCORE%6d HiSCORE%6d HP%2d", score, hi_score, me.hp);
                 vram_strings(0, LSCORE, mes);
             }
-            // meteo turn
-            if (countup % meteo_rate == 0) {
-                // move meteo
-                move_entity(meteo, NMETEO, p_metro);
-                // change meteo rate
+            // METEOR turn
+            if (countup % METEOR_rate == 0) {
+                // move METEOR
+                move_entity(METEOR, NMETEOR, p_metro);
+                // change METEOR rate
                 if (IMRATE - score > MMRATE) {
-                    meteo_rate = IMRATE - score;
+                    METEOR_rate = IMRATE - score;
                 } else {
-                    meteo_rate = MMRATE;
+                    METEOR_rate = MMRATE;
                 }
                 // change metro probability
-                p_metro = IPMETEO + score / 200;
+                p_metro = IPMETEOR + score / 200;
                 if (p_metro >= 99) p_metro = 99;
             }        
             // heart turn
@@ -499,8 +499,8 @@ int main() {
         if (game_state == IDLE) {
             if (countup % 50000 == 0) {
                 // game title
-                vram_strings(10, 10, "FLYING METEO!!");
-                vram_strings(10, 12, "  by Pa@ART   ");
+                vram_strings(9, 10, "FLYING METEOR!!");
+                vram_strings(9, 12, "  by Pa@ART   ");
                 if (blink == true) {
                     vram_strings(10, 16, "Push A button ");
                 } else {
