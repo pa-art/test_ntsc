@@ -39,8 +39,8 @@
 #define DEAD    0       // dead state of life
 #define DRAW_SX 2       // draw start of x
 #define DRAW_SY 3       // draw start of y
-#define BBOX    4       // character for living life
-#define WBOX    5       // character for dead life
+#define BBOX    7       // character for living life (4)
+#define WBOX    0       // character for dead life (5)
 #define STABLE  30      // stages for judging stable state
 
 volatile unsigned char vram[VRAM_W][VRAM_H]; // VRAM
@@ -356,7 +356,7 @@ int main() {
             // flip LED
             flip_led();
         }
-        if (countup % 100000 == 0) {
+        if (countup % 200000 == 0) {
             // draw life map
             draw_life();
             // update life map
