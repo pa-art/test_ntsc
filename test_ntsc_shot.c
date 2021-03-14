@@ -42,8 +42,8 @@
 #define DKEY    (1 << DKEYGP)
 #define AKEY    (1 << AKEYGP)
 #define BKEY    (1 << BKEYGP)
-#define CMETEOR  0xA     // character of wall
-#define CHEART  0x8     // character of dot
+#define CMETEOR  0xA     // character of meteor
+#define CHEART  0x8     // character of heart
 #define CME     0x9     // character of me
 #define NMETEOR  20      // max number of METEOR
 #define IMRATE  30000   // initial METEOR rate
