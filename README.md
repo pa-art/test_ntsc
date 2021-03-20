@@ -9,7 +9,7 @@ GPIO15(pin20) -> 1kohm resister -> RCA+
 GND(pin23) -> RCA-
 
 ## Mini game pad with tact switches
-
+![Mini game pad](pico_gamepad.png)
 
 ## Demo programs
 * test_ntsc.c:  Basic test for NTSC signal generation.
