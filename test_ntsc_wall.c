@@ -3,6 +3,7 @@
  * "DROPPING MONSTERS" game is implemented.
  * ATTENTION: You should compile this source with Release option of ARM compiler.
  * Feb.27--, 2021  Pa@ART
+ * Mar.20, 2021 Pa@ART changed game parameters
  */
 
 #include <stdio.h>
@@ -61,7 +62,7 @@
 #define MYRATE  20000   // my rate
 #define ME_X    10      // initial x of me
 #define ME_Y    17      // initial y of me
-#define ME_HP   3       // HP of me
+#define ME_HP   5       // HP of me
 #define SUPERME 1       // superme mode flag
 #define NORMALME    0       // normalme mode flag
 #define MYTIMER 15      // superme mode timer value
@@ -71,6 +72,8 @@
 #define ENDW    26      // end x of wall
 #define HP_UP_SCORE 3000    // every HP_UP_SCORE, HP -> HP + 1
 #define HEART_BONUS 30  // bonus point for getting heart
+#define BASE_SCORE  10  // base score
+#define STAGE_BONUS 100 // base stage bonus
 
 volatile unsigned char vram[VRAM_W][VRAM_H]; // VRAM
 volatile int count = 1;                      // horizontal line counter
@@ -616,6 +619,8 @@ int main() {
                     score += bonus;
                     stages++;
                     me.odd = true;
+                    me.sp = NORMALME;
+                    me.timer = 0;
                 // if game started
                 } else {
                     // clear score
@@ -650,11 +655,11 @@ int main() {
                 count_upstair += (move_me(&me, mouse, heart, floor) == true) ? 1 : 0;
                 if (count_upstair >= 2) {
                     count_upstair = 0;
-                    score += 10;
+                    score += stages * BASE_SCORE;
                     floor++;
                 }
                 // judge me (bump into mouse or get heart)
-                score += judge_me(&me, mouse, heart);
+                score += judge_me(&me, mouse, heart) * stages;
                 // if score is over hp_up_score
                 if (score >= hp_up_score) {
                     // HP++
@@ -694,7 +699,7 @@ int main() {
                     mouse_rate = MMRATE;
                 }
                 // change mouse probability
-                p_mouse = IPMOUSE + floor / 5;
+                p_mouse = IPMOUSE + floor / 6 + stages * 2;
                 if (p_mouse >= 99) p_mouse = 99;
             }
             // heart turn
@@ -706,13 +711,16 @@ int main() {
         // clear, continue to play and add bonus score
         if (game_state == CLEAR) {
             if (countup % 80000 == 0) {
+                int o_bonus, s_bonus;
+                o_bonus = oxygen * BASE_SCORE * stages;
+                s_bonus = stages * STAGE_BONUS;
                 // stage clear title
                 vram_strings(10, 10, "STAGE CLEAR!");
-                bonus = oxygen * 10 + stages * 100;
-                sprintf(mes, "OXYGEN BONUS: %4d", oxygen * 10);
-                vram_strings(8, 12, mes);
-                sprintf(mes, "STAGE  BONUS: %4d", stages * 100);
-                vram_strings(8, 14, mes);
+                bonus = o_bonus + s_bonus;
+                sprintf(mes, "OXYGEN BONUS: %4d", o_bonus);
+                vram_strings(6, 12, mes);
+                sprintf(mes, "STAGE  BONUS: %4d", s_bonus);
+                vram_strings(6, 14, mes);
                 if (blink == true) {
                     vram_strings(9, 18, "Push B button ");
                 } else {
@@ -767,15 +775,19 @@ int main() {
             if (countup % 80000 == 0) {
                 // game over title
                 vram_strings(10, 10, "GAME OVER!!");
+                // if oxygen has exhausted
+                if (oxygen <= 0) {
+                    vram_strings(10, 12, "Oxygen exhausted!");
+                }
                 // if score is higher than hi-score
                 if (score > hi_score) {
                     hi_score = score;
-                    vram_strings(10, 12, "Hi-Score!!");
+                    vram_strings(10, 14, "Hi-Score!!");
                 }
                 if (blink == true) {
-                    vram_strings(9, 16, "Push B button ");
+                    vram_strings(9, 18, "Push B button ");
                 } else {
-                    vram_strings(9, 16, "              ");
+                    vram_strings(9, 18, "              ");
                 }
                 blink = !blink;
             }
