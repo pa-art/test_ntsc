@@ -8,6 +8,9 @@ GPIO15(pin20) -> 1kohm resister -> RCA+
 
 GND(pin23) -> RCA-
 
+## Mini game pad with tact switches
+
+
 ## Demo programs
 * test_ntsc.c:  Basic test for NTSC signal generation.
 
@@ -15,7 +18,11 @@ GND(pin23) -> RCA-
 
 * test_ntsc_shot.c:  Tiny game named "FLYING METEOR!!".
 
-All programs needs font8x8_basic.h to draw ASCII fonts and some characters.
+* test_ntsc_shot2.c:  Tiny game named "FLYING METEOR 2!!".
+
+* test_ntsc_wall.c: Tiny game named "DROPPING MONSTERS".
+
+All programs need font8x8_basic.h to draw ASCII fonts and some characters and are compiled with release option(speed optimization).
 
 ## To compile a project
 To copile a project, you need
