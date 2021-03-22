@@ -453,7 +453,7 @@ int judge_me( entity *me, entity *mouse, entity *heart) {
             }
             // clear the mouse
             vram_write(mouse[i].x, mouse[i].y, ' ');
-            mouse[i].x = -1;
+            mouse[i].y = VRAM_H;
         }
     }
     // return bonus score to be added
